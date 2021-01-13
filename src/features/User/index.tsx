@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import clsx from 'clsx';
 import { createStyles, lighten, makeStyles, Theme } from '@material-ui/core/styles';
+import TextField from '@material-ui/core/TextField';
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -29,6 +31,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import { useHistory } from 'react-router-dom';
 import { openUpdate } from '../../app/actions/actionIsUpdate';
 import { deleteUser, setUpdate } from '../../app/actions/actionUser';
+import ConfirmDeleteDialog from './components/confirmDeleteDialog';
 
 
 // const createData = (
@@ -243,12 +246,16 @@ const ListUser = () => {
     const classes = useStyles();
     // const [rows, setRows] = useState<User[]>([]);
     const rows = useSelector((state: StateInterface) => state.listUser);
+    const [listUser, setListUser] = useState<User[]>([]);
     const [order, setOrder] = useState<Order>('asc');
     const [orderBy, setOrderBy] = useState<keyof User>('fullName');
     const [selected, setSelected] = useState<number[]>([]);
     const [page, setPage] = useState(0);
     const [dense, setDense] = useState(false);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [idDelete, setIdDelete] = useState(0);
     const history = useHistory();
     const dispatch = useDispatch();
     const handleRequestSort = (event: React.MouseEvent<unknown>, property: keyof User) => {
@@ -256,7 +263,9 @@ const ListUser = () => {
         setOrder(isAsc ? 'desc' : 'asc');
         setOrderBy(property);
     };
-
+    useEffect(() => {
+        setListUser(rows);
+    }, [rows])
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
             const newSelecteds: number[] = rows.map((n) => n.id);
@@ -303,14 +312,58 @@ const ListUser = () => {
 
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
     const handleUpdateUser = (user: User) => {
-
         history.push('/cap-nhat');
         dispatch(setUpdate(user));
         dispatch(openUpdate());
     }
+    const handleDelete = (stateDelete: boolean) => {
+        setConfirmDelete(stateDelete);
+    }
+    const handleConfirm = (stateOpen: boolean, id: number = 0) => {
+        setOpenConfirm(stateOpen);
+        if (id !== 0) setIdDelete(id);
+
+    }
+    useEffect(() => {
+
+        if (confirmDelete) {
+            dispatch(deleteUser(idDelete));
+            setIdDelete(0);
+            setConfirmDelete(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [confirmDelete])
+    const handleSearch = (event: object, value: string) => {
+        console.log("🚀 ~ file: index.tsx ~ line 337 ~ handleSearch ~ value", value)
+        if (value) {
+            setTimeout(() => {
+                let search: User[] = rows.filter(x => x.fullName.toLowerCase().indexOf(value.toLowerCase()) > -1);
+                console.log("🚀 ~ file: index.tsx ~ line 341 ~ setTimeout ~ search", search)
+                setListUser(search);
+            }, 500)
+        } else setListUser(rows);
+
+    }
     return (
         <div className={classes.root}>
             <CreateUser />
+            <ConfirmDeleteDialog open={openConfirm} onClose={handleConfirm} onDelete={handleDelete} />
+            <Autocomplete
+                freeSolo
+                id="search-input"
+                disableClearable
+                onInputChange={handleSearch}
+                options={rows.map((row) => row.fullName)}
+                renderInput={(params: any) => (
+                    <TextField
+                        {...params}
+                        label="Tìm kiếm"
+                        margin="normal"
+                        variant="outlined"
+                        InputProps={{ ...params.InputProps, type: 'search' }}
+                    />
+                )}
+            />
             <Paper className={classes.paper}>
                 <EnhancedTableToolbar numSelected={selected.length} />
                 <TableContainer>
@@ -327,10 +380,10 @@ const ListUser = () => {
                             orderBy={orderBy}
                             onSelectAllClick={handleSelectAllClick}
                             onRequestSort={handleRequestSort}
-                            rowCount={rows.length}
+                            rowCount={listUser.length}
                         />
                         <TableBody>
-                            {stableSort(rows, getComparator(order, orderBy))
+                            {stableSort(listUser, getComparator(order, orderBy))
                                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                 .map((row, index) => {
                                     const isItemSelected = isSelected(row.id);
@@ -369,7 +422,7 @@ const ListUser = () => {
                                                     </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Xóa">
-                                                    <IconButton aria-label="Xóa" onClick={() => dispatch(deleteUser(row.id))}>
+                                                    <IconButton aria-label="Xóa" onClick={() => handleConfirm(true, row.id)}>
                                                         <DeleteIcon />
                                                     </IconButton>
                                                 </Tooltip>
@@ -390,7 +443,7 @@ const ListUser = () => {
                 <TablePagination
                     rowsPerPageOptions={[5, 10, 25]}
                     component="div"
-                    count={rows.length}
+                    count={listUser.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onChangePage={handleChangePage}

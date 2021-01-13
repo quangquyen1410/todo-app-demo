@@ -81,6 +81,10 @@ const CreateUser = () => {
         formAddUser.setFieldValue('fullName', formAddUser.values.firstName + ' ' + formAddUser.values.lastName);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formAddUser.values.firstName, formAddUser.values.lastName])
+    useEffect(() => {
+        console.log('Render');
+
+    }, [])
     return (
         <div>
 
