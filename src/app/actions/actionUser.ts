@@ -11,6 +11,12 @@ export const deleteUser = (id: number) => {
         payload: id
     }
 }
+export const deleteMultipleUser = (listId: number[]) => {
+    return {
+        type: 'DELETE_MULTIPLE_USER',
+        payload: listId
+    }
+}
 export const updateUser = (user: User) => {
     return {
         type: 'UPDATE_USER',

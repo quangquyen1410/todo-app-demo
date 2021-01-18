@@ -4,5 +4,6 @@ export type StateInterface = {
     listUser: User[],
     dialogs: boolean,
     isUpdate: boolean,
-    user: User
+    user: User,
+    language: string
 }

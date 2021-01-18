@@ -1,0 +1,13 @@
+{
+    "listUser": {
+        "lblListUser": "List user",
+        "lblId": "Id",
+        "lblFirstName": "First Name",
+        "lblLastName": "Last Name",
+        "lblFullName": "Full Name",
+        "lblPhone": "Phone",
+        "lblPosition": "Position",
+        "lblBirthDt": "BirthDt",
+        "lblAction": "Action"
+    }
+}

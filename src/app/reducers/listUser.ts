@@ -18,6 +18,11 @@ const listUserReduces = (state = listUser, action: any) => {
             localStorage.setItem('listUser', JSON.stringify(state));
             return [...state]
         }
+        case 'DELETE_MULTIPLE_USER': {
+            state = state.filter(x => action.payload.indexOf(x.id) === -1);
+            localStorage.setItem('listUser', JSON.stringify(state));
+            return [...state]
+        }
         case 'UPDATE_USER': {
             const index = state.findIndex(x => x.id === action.payload.id);
             state[index] = action.payload

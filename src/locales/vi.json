@@ -1,0 +1,13 @@
+{
+    "listUser": {
+        "lblListUser": "Danh sách người dùng",
+        "lblId": "Id",
+        "lblFirstName": "Họ",
+        "lblLastName": "Tên",
+        "lblFullName": "Họ và tên",
+        "lblPhone": "Số điện thoại",
+        "lblPosition": "Chức vụ",
+        "lblBirthDt": "Ngày sinh",
+        "lblAction": "Hành động"
+    }
+}

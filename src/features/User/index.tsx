@@ -30,9 +30,11 @@ import { StateInterface } from '../../interface/stateInterface';
 import EditIcon from '@material-ui/icons/Edit';
 import { useHistory } from 'react-router-dom';
 import { openUpdate } from '../../app/actions/actionIsUpdate';
-import { deleteUser, setUpdate } from '../../app/actions/actionUser';
+import { deleteMultipleUser, deleteUser, setUpdate } from '../../app/actions/actionUser';
 import ConfirmDeleteDialog from './components/confirmDeleteDialog';
-
+import i18n, { listLanguages } from '../../locales/i18n';
+import MenuItem from '@material-ui/core/MenuItem';
+import { setLangState } from '../../app/actions/actionLang';
 
 // const createData = (
 //     id: number,
@@ -86,15 +88,6 @@ interface HeadCell {
     numeric: boolean;
 }
 
-const headCells: HeadCell[] = [
-    { id: 'id', numeric: false, disablePadding: true, label: 'Id' },
-    { id: 'firstName', numeric: false, disablePadding: false, label: 'Họ' },
-    { id: 'lastName', numeric: false, disablePadding: false, label: 'Tên' },
-    { id: 'fullName', numeric: false, disablePadding: false, label: 'Họ và tên' },
-    { id: 'phone', numeric: false, disablePadding: false, label: 'SĐT' },
-    { id: 'position', numeric: false, disablePadding: false, label: 'Chức vụ' },
-    { id: 'birthDt', numeric: false, disablePadding: false, label: 'Ngày sinh' }
-];
 
 interface EnhancedTableProps {
     classes: ReturnType<typeof useStyles>;
@@ -112,6 +105,15 @@ function EnhancedTableHead(props: EnhancedTableProps) {
         onRequestSort(event, property);
     };
 
+    const headCells: HeadCell[] = [
+        { id: 'id', numeric: false, disablePadding: true, label: i18n.t("listUser.lblId") },
+        { id: 'firstName', numeric: false, disablePadding: false, label: i18n.t("listUser.lblFirstName") },
+        { id: 'lastName', numeric: false, disablePadding: false, label: i18n.t("listUser.lblLastName") },
+        { id: 'fullName', numeric: false, disablePadding: false, label: i18n.t("listUser.lblFullName") },
+        { id: 'phone', numeric: false, disablePadding: false, label: i18n.t("listUser.lblPhone") },
+        { id: 'position', numeric: false, disablePadding: false, label: i18n.t("listUser.lblPosition") },
+        { id: 'birthDt', numeric: false, disablePadding: false, label: i18n.t("listUser.lblBirthDt") }
+    ];
     return (
 
         <TableHead>
@@ -146,7 +148,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
                     </TableCell>
                 ))}
                 <TableCell padding="default" align="center">
-                    Hành động
+                    {i18n.t("listUser.lblAction")}
                 </TableCell>
             </TableRow>
         </TableHead>
@@ -178,12 +180,13 @@ const useToolbarStyles = makeStyles((theme: Theme) =>
 );
 
 interface EnhancedTableToolbarProps {
-    numSelected: number;
+    numSelected: number,
+    onClose: (stateOpen: boolean) => void
 }
 
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
     const classes = useToolbarStyles();
-    const { numSelected } = props;
+    const { numSelected, onClose } = props;
 
     return (
         <Toolbar
@@ -197,12 +200,12 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
                 </Typography>
             ) : (
                     <Typography className={classes.title} variant="h6" id="tableTitle" component="div">
-                        Danh sách người dùng
+                        {i18n.t("listUser.lblListUser")}
                     </Typography>
                 )}
             {numSelected > 0 ? (
                 <Tooltip title="Delete">
-                    <IconButton aria-label="delete">
+                    <IconButton aria-label="delete" onClick={() => onClose(true)}>
                         <DeleteIcon />
                     </IconButton>
                 </Tooltip>
@@ -246,6 +249,7 @@ const ListUser = () => {
     const classes = useStyles();
     // const [rows, setRows] = useState<User[]>([]);
     const rows = useSelector((state: StateInterface) => state.listUser);
+    const lang = useSelector((state: StateInterface) => state.language)
     const [listUser, setListUser] = useState<User[]>([]);
     const [order, setOrder] = useState<Order>('asc');
     const [orderBy, setOrderBy] = useState<keyof User>('fullName');
@@ -327,25 +331,52 @@ const ListUser = () => {
     useEffect(() => {
 
         if (confirmDelete) {
-            dispatch(deleteUser(idDelete));
-            setIdDelete(0);
+            if (idDelete !== 0) {
+                dispatch(deleteUser(idDelete));
+                setIdDelete(0);
+
+            } else {
+                dispatch(deleteMultipleUser(selected))
+                setSelected([]);
+            }
             setConfirmDelete(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [confirmDelete])
     const handleSearch = (event: object, value: string) => {
-        console.log("🚀 ~ file: index.tsx ~ line 337 ~ handleSearch ~ value", value)
         if (value) {
             setTimeout(() => {
                 let search: User[] = rows.filter(x => x.fullName.toLowerCase().indexOf(value.toLowerCase()) > -1);
-                console.log("🚀 ~ file: index.tsx ~ line 341 ~ setTimeout ~ search", search)
                 setListUser(search);
             }, 500)
-        } else setListUser(rows);
+            return
+        }
+        setListUser(rows);
+    }
+
+    const changeLanguage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        dispatch(setLangState(event.target.value));
 
     }
+    useEffect(() => {
+        console.log("run")
+    })
     return (
         <div className={classes.root}>
+            <TextField
+                id="change-language"
+                select
+                label="Chọn ngôn ngữ"
+                value={lang || localStorage.getItem('lang') || 'vi'}
+                onChange={changeLanguage}
+                helperText="Vui lòng chọn ngôn ngữ"
+            >
+                {listLanguages.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                    </MenuItem>
+                ))}
+            </TextField>
             <CreateUser />
             <ConfirmDeleteDialog open={openConfirm} onClose={handleConfirm} onDelete={handleDelete} />
             <Autocomplete
@@ -365,7 +396,7 @@ const ListUser = () => {
                 )}
             />
             <Paper className={classes.paper}>
-                <EnhancedTableToolbar numSelected={selected.length} />
+                <EnhancedTableToolbar numSelected={selected.length} onClose={handleConfirm} />
                 <TableContainer>
                     <Table
                         className={classes.table}
@@ -386,6 +417,7 @@ const ListUser = () => {
                             {stableSort(listUser, getComparator(order, orderBy))
                                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                 .map((row, index) => {
+                                    console.log(row);
                                     const isItemSelected = isSelected(row.id);
                                     const labelId = `enhanced-table-checkbox-${index}`;
 
@@ -441,7 +473,7 @@ const ListUser = () => {
                     </Table>
                 </TableContainer>
                 <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
+                    rowsPerPageOptions={[5, 10, 15]}
                     component="div"
                     count={listUser.length}
                     rowsPerPage={rowsPerPage}
